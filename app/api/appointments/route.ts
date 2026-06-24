@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { getCurrentOrg } from '@/lib/org';
+import { sendConfirmationEmail } from '@/lib/email';
 
 export async function GET(request: Request) {
   const org = await getCurrentOrg();
@@ -131,6 +132,24 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ error: msg }, { status: 400 });
+  }
+
+  // Enviar email de confirmación (degradación con gracia)
+  try {
+    const { data: service } = await supabase
+      .from('services')
+      .select('name')
+      .eq('id', service_id)
+      .single();
+
+    await sendConfirmationEmail({
+      to: customer_email,
+      businessName: org.name,
+      serviceName: service?.name ?? 'Servicio',
+      startsAt: starts_at,
+    });
+  } catch (err) {
+    console.warn('[appointments] No se pudo enviar email de confirmación:', err);
   }
 
   return NextResponse.json({ id: data }, { status: 201 });
