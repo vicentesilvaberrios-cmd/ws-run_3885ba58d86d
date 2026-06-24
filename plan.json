@@ -1,0 +1,17 @@
+{
+  "backend": [
+    "NEW lib/email.ts: helper de servidor sendConfirmationEmail() que usa Resend vía POST a https://api.resend.com/emails leyendo process.env.RESEND_API_KEY y process.env.RESEND_FROM; arma el cuerpo con nombre del negocio, servicio, fecha y hora en America/Santiago 24h (reutiliza formatTime/formatDate de lib/format.ts); si falta RESEND_API_KEY hace return temprano y solo registra console.warn (degradación con gracia, nunca lanza)",
+    "EDIT app/api/public/[slug]/appointments/route.ts: tras crear la reserva con éxito (rpc create_appointment), consultar nombre del negocio (organizations por slug) y nombre del servicio (services por serviceId), llamar a sendConfirmationEmail con customer_email; envolver en try/catch para no romper el flujo si falla el envío",
+    "EDIT app/api/appointments/route.ts: en POST, tras owner_create_appointment exitoso, obtener el nombre del negocio (org.name ya disponible) y el nombre del servicio (services por service_id), llamar a sendConfirmationEmail con customer_email; try/catch para degradar con gracia"
+  ],
+  "frontend": [],
+  "acceptance_criteria": [
+    "Al crear una reserva desde la página pública del cliente se envía un email de confirmación al email del cliente, solo desde el servidor",
+    "Al crear una cita manual desde el panel se envía un email de confirmación al email del cliente, solo desde el servidor",
+    "El email se envía usando Resend con process.env.RESEND_API_KEY y process.env.RESEND_FROM, sin exponer la API key al cliente ni usar prefijo NEXT_PUBLIC",
+    "El email incluye nombre del negocio, servicio, y fecha/hora de la cita en hora de Chile (America/Santiago) en formato 24h, consistente con la app",
+    "Si RESEND_API_KEY no está disponible, la reserva se crea igual y solo se registra que el email no se envió (no se rompe el flujo)",
+    "No se agregan recordatorios programados ni cron; el alcance se limita al email de confirmación al reservar",
+    "next se mantiene en ^14.2.35 o superior y no se introducen dependencias con CVEs"
+  ]
+}
