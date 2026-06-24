@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useRef } from 'react';
 import Link from 'next/link';
 import { formatTime, formatDate, formatPrice } from '@/lib/format';
 
@@ -22,6 +22,7 @@ export default function ConfirmacionPage({ params }: { params: Promise<{ slug: s
   const { slug } = use(params);
   const [booking, setBooking] = useState<BookingData | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const headingRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     try {
@@ -34,6 +35,12 @@ export default function ConfirmacionPage({ params }: { params: Promise<{ slug: s
     }
     setLoaded(true);
   }, []);
+
+  useEffect(() => {
+    if (loaded && booking) {
+      headingRef.current?.focus();
+    }
+  }, [loaded, booking]);
 
   if (!loaded) {
     return (
@@ -64,7 +71,10 @@ export default function ConfirmacionPage({ params }: { params: Promise<{ slug: s
         <div className="cluster" style={{ justifyContent: 'center' }}>
           <span className="badge badge-ok" style={{ fontSize: 'var(--fs-sm)' }}>Reserva confirmada</span>
         </div>
-        <h1 style={{ textAlign: 'center' }}>¡Listo! Tu reserva está confirmada</h1>
+        <h1 ref={headingRef} tabIndex={-1} role="status" style={{ textAlign: 'center', outline: 'none' }}>¡Listo! Tu reserva está confirmada</h1>
+        <div className="alert alert-info" role="status">
+          Te enviamos un correo de confirmación a <strong>{booking.customerEmail}</strong> con los detalles de tu cita. Si no lo ves, revisa la bandeja de no deseados.
+        </div>
 
         <div className="panel stack" style={{ gap: 'var(--sp-2)' }}>
           {booking.orgName && (
@@ -109,7 +119,7 @@ export default function ConfirmacionPage({ params }: { params: Promise<{ slug: s
         </div>
 
         <p className="text-sm muted" style={{ textAlign: 'center' }}>
-          Te esperamos. Si necesitas cambiar algo, contacta con el negocio.
+          Si necesitas cambiar algo, contacta con el negocio.
         </p>
 
         <div className="cluster" style={{ justifyContent: 'center' }}>

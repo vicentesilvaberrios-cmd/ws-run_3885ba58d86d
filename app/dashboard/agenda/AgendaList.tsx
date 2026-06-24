@@ -257,6 +257,7 @@ function CreateAppointmentForm({
   const [servicesLoading, setServicesLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const [serviceId, setServiceId] = useState('');
   const [slots, setSlots] = useState<{ starts_at: string; ends_at: string }[]>([]);
@@ -348,7 +349,14 @@ function CreateAppointmentForm({
         throw new Error(data.error || 'Error al crear la cita');
       }
 
-      onCreated();
+      const data = await res.json();
+      if (data.email_sent === false) {
+        setSuccessMsg('Cita guardada. No pudimos enviar el correo de confirmación; avisa al cliente directamente.');
+      } else {
+        setSuccessMsg('Cita guardada. Se envió la confirmación al correo del cliente.');
+      }
+      // Mostrar el resultado brevemente antes de cerrar
+      setTimeout(() => onCreated(), 1500);
     } catch (err) {
       setFormError(err instanceof Error ? err.message : 'Error al crear la cita');
     } finally {
@@ -358,7 +366,11 @@ function CreateAppointmentForm({
 
   return (
     <form className="panel stack" onSubmit={handleSubmit}>
-      <h2 className="text-lg" style={{ fontWeight: 700 }}>Crear cita manual</h2>
+      <h2 className="text-lg" style={{ fontWeight: 700 }}>Nueva cita</h2>
+
+      {successMsg && (
+        <div className="alert alert-success" role="status">{successMsg}</div>
+      )}
 
       {servicesLoading ? (
         <p className="muted">Cargando servicios…</p>
@@ -480,9 +492,9 @@ function CreateAppointmentForm({
 
           <div className="cluster">
             <button type="submit" className="btn btn-primary" disabled={submitting}>
-              {submitting ? 'Creando…' : 'Crear cita'}
+              {submitting ? 'Guardando…' : 'Guardar cita'}
             </button>
-            <button type="button" className="btn btn-ghost" onClick={onCreated}>
+            <button type="button" className="btn btn-ghost" onClick={onCreated} disabled={submitting}>
               Cancelar
             </button>
           </div>

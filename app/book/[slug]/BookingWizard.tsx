@@ -107,6 +107,7 @@ export function BookingWizard({
   const handleViewSlots = () => {
     setDateTouched(true);
     if (!selectedDate || !selectedService) return;
+    if (selectedDate < todayStr) return;
     setStep(3);
     loadSlots(selectedService.id, selectedDate);
   };
@@ -122,7 +123,7 @@ export function BookingWizard({
     customerEmailTouched && !customerEmail.trim()
       ? 'Tu correo es obligatorio'
       : customerEmailTouched && !/^.+@.+\..+$/.test(customerEmail)
-        ? 'El correo no es válido'
+        ? 'Escribe un correo válido para enviarte la confirmación.'
         : '';
 
   const handleConfirm = async () => {
@@ -194,6 +195,11 @@ export function BookingWizard({
 
   const todayStr = new Date().toISOString().split('T')[0];
 
+  const pastDateError =
+    dateTouched && selectedDate && selectedDate < todayStr
+      ? 'Esa fecha ya pasó, elige otra.'
+      : '';
+
   // ---- Render ----
   return (
     <div className="stack" style={{ maxWidth: 600, marginInline: 'auto' }}>
@@ -226,18 +232,19 @@ export function BookingWizard({
         <div className="alert alert-error" role="alert">{bookingError}</div>
       )}
 
+      {(initialError || servicesError) && !loadingServices && (
+        <div className="alert alert-error" role="alert">
+          No pudimos cargar los servicios.{' '}
+          <button className="btn btn-sm btn-ghost" onClick={loadServices}>Reintentar</button>
+        </div>
+      )}
+
       {/* Step 1: Servicio */}
       {step === 1 && (
         <div className="stack">
           <h2>Elige un servicio</h2>
           {loadingServices && <p className="muted">Cargando servicios…</p>}
-          {servicesError && (
-            <div className="alert alert-error" role="alert">
-              No pudimos cargar los servicios.{' '}
-              <button className="btn btn-sm btn-ghost" onClick={loadServices}>Reintentar</button>
-            </div>
-          )}
-          {!loadingServices && !servicesError && services.length === 0 && (
+          {!loadingServices && !servicesError && !initialError && services.length === 0 && (
             <div className="empty-state">
               Este negocio aún no tiene servicios disponibles. Vuelve más tarde.
             </div>
@@ -277,15 +284,18 @@ export function BookingWizard({
                 if (dateTouched) setDateTouched(false);
               }}
               onBlur={() => setDateTouched(true)}
-              aria-invalid={!!(dateTouched && !selectedDate)}
+              aria-invalid={!!(dateTouched && !selectedDate) || !!pastDateError}
             />
             {dateTouched && !selectedDate && (
               <span className="error-text" role="alert">Elige una fecha</span>
             )}
+            {pastDateError && (
+              <span className="error-text" role="alert">{pastDateError}</span>
+            )}
           </div>
           <div className="cluster">
             <button className="btn btn-ghost" onClick={() => setStep(1)}>Atrás</button>
-            <button className="btn btn-primary" onClick={handleViewSlots}>
+            <button className="btn btn-primary" onClick={handleViewSlots} disabled={!!pastDateError}>
               Ver horarios disponibles
             </button>
           </div>

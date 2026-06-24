@@ -135,6 +135,7 @@ export async function POST(request: Request) {
   }
 
   // Enviar email de confirmación (degradación con gracia)
+  let email_sent = true;
   try {
     const { data: service } = await supabase
       .from('services')
@@ -150,7 +151,8 @@ export async function POST(request: Request) {
     });
   } catch (err) {
     console.warn('[appointments] No se pudo enviar email de confirmación:', err);
+    email_sent = false;
   }
 
-  return NextResponse.json({ id: data }, { status: 201 });
+  return NextResponse.json({ id: data, email_sent }, { status: 201 });
 }
